@@ -1,9 +1,9 @@
-import 'package:audioplayers/audio_cache.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:biblepod/model/bibleaudio.dart';
+import 'package:biblepod/model/bibleresponse.dart';
+import 'package:biblepod/services/bibleService.dart';
+import 'package:biblepod/services/bibleServiceNew.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'config/data.dart';
 
 class HomePage extends StatefulWidget {
@@ -171,7 +171,10 @@ class OldTestament extends StatefulWidget {
   _OldTestamentState createState() => _OldTestamentState();
 }
 
-class _OldTestamentState extends State<OldTestament> {
+class _OldTestamentState extends State<OldTestament>
+    with AutomaticKeepAliveClientMixin<OldTestament> {
+  BibleService bibleService = BibleService();
+
   @override
   void initState() {
     // TODO: implement initState
@@ -186,85 +189,117 @@ class _OldTestamentState extends State<OldTestament> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemBuilder: (listViewContext, index) {
-        return Consumer<BibleAudio>(
-          builder: (_, myAudioModel, child) => Card(
-            margin: EdgeInsets.all(7),
-            elevation: 2.2,
-            shadowColor: Colors.grey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Icon(Icons.album),
-                  title: Text(widget.dataTilesList[index].book),
-                  trailing: Text(
-                      myAudioModel.totalDuration.toString().split('.').first),
-                  // subtitle:
-                  // Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: <Widget>[
-                    myAudioModel.isPlaying
-                        ? SliderTheme(
-                            data: SliderThemeData(
-                                trackHeight: 5,
-                                thumbShape: RoundSliderThumbShape(
-                                    enabledThumbRadius: 5)),
-                            child: Slider(
-                              value: myAudioModel.position == null
-                                  ? 0
-                                  : myAudioModel.position.inMilliseconds
-                                      .toDouble(),
-                              onChanged: (value) {
-                                myAudioModel.seekAudio(
-                                    Duration(milliseconds: value.toInt()));
-                              },
-                              min: 0,
-                              max: myAudioModel.totalDuration == null
-                                  ? 20
-                                  : myAudioModel.totalDuration.inMilliseconds
-                                      .toDouble(),
-                            ),
-                          )
-                        : Text(''),
-                    TextButton(
-                      child: Text('My note'),
-                      onPressed: () {/* ... */},
-                    ),
-                    Row(
+    super.build(context);
+    return Consumer<BibleAudio>(
+      builder: (_, myAudioModel, child) => FutureBuilder(
+          future: bibleService.getBible(),
+          builder: (context, AsyncSnapshot snapshot) {
+            if (snapshot.hasData) {
+              BibleResponse bibleResponse = snapshot.data;
+              return ListView.builder(
+                itemBuilder: (_, index) {
+                  return Card(
+                    margin: EdgeInsets.all(7),
+                    elevation: 2.2,
+                    shadowColor: Colors.grey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(width: 8),
-                        Text(myAudioModel.position.toString().split('.').first),
-                        IconButton(
-                            icon: Icon(
-                              myAudioModel.isPlaying
-                                  ? Icons.pause_circle_filled
-                                  : Icons.play_circle_fill_outlined,
+                        ListTile(
+                          leading: Icon(Icons.album),
+                          title: RichText(
+                              text: TextSpan(children: [
+                            TextSpan(
+                                text: bibleResponse.data[index].fileName + ' ',
+                                style: TextStyle(color: Colors.black)),
+                            TextSpan(
+                                text: bibleResponse.data[index].chapter
+                                    .toString(),
+                                style: TextStyle(color: Colors.black)),
+                          ])),
+                          trailing: Text(myAudioModel.totalDuration
+                              .toString()
+                              .split('.')
+                              .first),
+                          // subtitle:
+                          // Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            myAudioModel.isPlaying
+                                ? SliderTheme(
+                                    data: SliderThemeData(
+                                        trackHeight: 5,
+                                        thumbShape: RoundSliderThumbShape(
+                                            enabledThumbRadius: 5)),
+                                    child: Slider(
+                                      value: myAudioModel.position == null
+                                          ? 0
+                                          : myAudioModel.position.inMilliseconds
+                                              .toDouble(),
+                                      onChanged: (value) {
+                                        myAudioModel.seekAudio(Duration(
+                                            milliseconds: value.toInt()));
+                                      },
+                                      min: 0,
+                                      max: myAudioModel.totalDuration == null
+                                          ? 20
+                                          : myAudioModel
+                                              .totalDuration.inMilliseconds
+                                              .toDouble(),
+                                    ),
+                                  )
+                                : Text(''),
+                            TextButton(
+                              child: Text('My note'),
+                              onPressed: () {/* ... */},
                             ),
-                            onPressed: () {
-                              myAudioModel.isPlaying
-                                  ? myAudioModel.pauseAudio()
-                                  : myAudioModel.playAudio();
-                            }),
+                            Row(
+                              children: [
+                                SizedBox(width: 8),
+                                Text(myAudioModel.position
+                                    .toString()
+                                    .split('.')
+                                    .first),
+                                IconButton(
+                                    icon: Icon(
+                                      myAudioModel.isPlaying
+                                          ? Icons.pause_circle_filled
+                                          : Icons.play_circle_fill_outlined,
+                                    ),
+                                    onPressed: () {
+                                      myAudioModel.isPlaying
+                                          ? myAudioModel.pauseAudio()
+                                          : myAudioModel.playAudio(bibleResponse
+                                              .data[index].filePath);
+                                    }),
+                              ],
+                            ),
+                            SizedBox(width: 8),
+                          ],
+                        ),
                       ],
                     ),
-                    SizedBox(width: 8),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-      itemCount: widget.dataTilesList.length,
+                  );
+                },
+                itemCount: bibleResponse.data.length,
+              );
+            } else if (snapshot.hasError) {
+              return Text("${snapshot.error}");
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          }),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
 
-class NewTestament extends StatelessWidget {
+class NewTestament extends StatefulWidget {
   const NewTestament({
     Key key,
     @required this.dataTilesList,
@@ -273,50 +308,122 @@ class NewTestament extends StatelessWidget {
   final List<DataTiles> dataTilesList;
 
   @override
+  _NewTestamentState createState() => _NewTestamentState();
+}
+
+class _NewTestamentState extends State<NewTestament>
+    with AutomaticKeepAliveClientMixin<NewTestament> {
+  BibleServiceNew bibleService = BibleServiceNew();
+  @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemBuilder: (listViewContext, index) {
-        return Card(
-          margin: EdgeInsets.all(7),
-          elevation: 2.2,
-          shadowColor: Colors.grey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.album),
-                title: Text(dataTilesList[index].book),
-                trailing: Text('${index + 1}'),
-                // subtitle:
-                // Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  TextButton(
-                    child: Text('My note'),
-                    onPressed: () {/* ... */},
-                  ),
-                  TextButton(
-                    child: Row(
+    super.build(context);
+    return Consumer<BibleAudio>(
+      builder: (_, myAudioModel, child) => FutureBuilder(
+          future: bibleService.getBible(),
+          builder: (context, AsyncSnapshot snapshot) {
+            if (snapshot.hasData) {
+              BibleResponse bibleResponse = snapshot.data;
+              return ListView.builder(
+                itemBuilder: (_, index) {
+                  return Card(
+                    margin: EdgeInsets.all(7),
+                    elevation: 2.2,
+                    shadowColor: Colors.grey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text("2:50"),
-                        SizedBox(width: 8),
-                        Icon(Icons.play_circle_fill_rounded),
+                        ListTile(
+                          leading: Icon(Icons.album),
+                          title: RichText(
+                              text: TextSpan(children: [
+                            TextSpan(
+                                text: bibleResponse.data[index].fileName + ' ',
+                                style: TextStyle(color: Colors.black)),
+                            TextSpan(
+                                text: bibleResponse.data[index].chapter
+                                    .toString(),
+                                style: TextStyle(color: Colors.black)),
+                          ])),
+                          trailing: Text(myAudioModel.totalDuration
+                              .toString()
+                              .split('.')
+                              .first),
+                          // subtitle:
+                          // Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            myAudioModel.isPlaying
+                                ? SliderTheme(
+                                    data: SliderThemeData(
+                                        trackHeight: 5,
+                                        thumbShape: RoundSliderThumbShape(
+                                            enabledThumbRadius: 5)),
+                                    child: Slider(
+                                      value: myAudioModel.position == null
+                                          ? 0
+                                          : myAudioModel.position.inMilliseconds
+                                              .toDouble(),
+                                      onChanged: (value) {
+                                        myAudioModel.seekAudio(Duration(
+                                            milliseconds: value.toInt()));
+                                      },
+                                      min: 0,
+                                      max: myAudioModel.totalDuration == null
+                                          ? 20
+                                          : myAudioModel
+                                              .totalDuration.inMilliseconds
+                                              .toDouble(),
+                                    ),
+                                  )
+                                : Text(''),
+                            TextButton(
+                              child: Text('My note'),
+                              onPressed: () {/* ... */},
+                            ),
+                            Row(
+                              children: [
+                                SizedBox(width: 8),
+                                Text(myAudioModel.position
+                                    .toString()
+                                    .split('.')
+                                    .first),
+                                IconButton(
+                                    icon: Icon(
+                                      myAudioModel.isPlaying
+                                          ? Icons.pause_circle_filled
+                                          : Icons.play_circle_fill_outlined,
+                                    ),
+                                    onPressed: () {
+                                      myAudioModel.isPlaying
+                                          ? myAudioModel.pauseAudio()
+                                          : myAudioModel.playAudio(bibleResponse
+                                              .data[index].filePath);
+                                    }),
+                              ],
+                            ),
+                            SizedBox(width: 8),
+                          ],
+                        ),
                       ],
                     ),
-                    onPressed: () {/* ... */},
-                  ),
-                  SizedBox(width: 8),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-      itemCount: dataTilesList.length,
+                  );
+                },
+                itemCount: bibleResponse.data.length,
+              );
+            } else if (snapshot.hasError) {
+              return Text("${snapshot.error}");
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          }),
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
 
 class DataTiles {
