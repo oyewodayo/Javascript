@@ -2,11 +2,6 @@ class Temi {
     constructor() {
 
     }
-    age(year) {
-        let date = new Date();
-        return date.getFullYear() - year;
-    }
-
 
     // Convert date to Numbers in months, weeks or days
     dateDiff(withdrawal_date, period) {
@@ -35,6 +30,12 @@ class Temi {
         }
 
         return numPeriods.toFixed(0);
+    }
+
+    // Get the year of birth from age
+    age(year) {
+        let date = new Date();
+        return date.getFullYear() - year;
     }
 
     // Generate Unique string
