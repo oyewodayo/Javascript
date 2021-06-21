@@ -1,1 +1,4 @@
-This is a read me. To be updated subsequently.
+This is a read me. Add the javascript file before the clossing of the head tag. Instantiate the class. 
+<script>
+    const temi = new Temi();
+</script>

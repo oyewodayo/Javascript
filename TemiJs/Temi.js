@@ -60,7 +60,7 @@ class Temi {
 
     UUID() {
         const dataString = Date.now().toString(16);
-        const randomString = Math.random().toString(16).substr(2);
+        const randomString = Math.random().toString(16).substr(2); //strip out the trailing starting period with substr(2)
 
         return dataString + randomString;
     }
